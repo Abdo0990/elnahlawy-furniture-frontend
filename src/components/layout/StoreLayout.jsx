@@ -4,6 +4,7 @@ import CartDrawer from '../store/CartDrawer';
 import { useCart } from '../../context/CartContext';
 import Footer from './Footer';
 import Navbar from './Navbar';
+import ScrollManager from './ScrollManager';
 import WhatsAppButton from './WhatsAppButton';
 
 function StoreLayout() {
@@ -18,6 +19,7 @@ function StoreLayout() {
 
   return (
     <div className="min-h-screen overflow-x-hidden">
+      <ScrollManager />
       <Navbar cartCount={itemCount} onOpenCart={openCart} />
       <Outlet />
       <Footer />

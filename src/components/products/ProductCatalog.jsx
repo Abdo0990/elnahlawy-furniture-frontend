@@ -1,11 +1,10 @@
 import { AnimatePresence, motion } from 'framer-motion';
 import { ChevronLeft, ChevronRight, PackageOpen, RotateCcw, Search } from 'lucide-react';
 import { useEffect, useState } from 'react';
+import { PRODUCT_FILTER_CATEGORIES } from '../../constants/productCategories';
 import api from '../../services/api';
 import ProductCard from './ProductCard';
 import ProductDetailsModal from './ProductDetailsModal';
-
-const categories = ['الكل', 'غرف نوم', 'صالونات', 'سفرة', 'مطابخ'];
 
 function ProductSkeleton() {
   return (
@@ -75,7 +74,7 @@ function ProductCatalog() {
   };
 
   return (
-    <section id="products" className="scroll-mt-20 py-20 sm:py-28">
+    <section id="products" className="scroll-mt-20 py-20 sm:scroll-mt-[7.25rem] sm:py-28">
       <div className="container-shell">
         <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} className="text-center">
           <span className="text-xs font-extrabold tracking-[0.18em] text-walnut">مختارات النحلاوي</span>
@@ -84,14 +83,14 @@ function ProductCatalog() {
         </motion.div>
 
         <div className="mt-10 flex flex-col items-center justify-between gap-5 lg:flex-row">
-          <div className="flex max-w-full gap-2 overflow-x-auto pb-1">
-            {categories.map((item) => (
-              <button key={item} type="button" onClick={() => selectCategory(item)} className={`focus-ring shrink-0 rounded-full px-5 py-2.5 text-sm font-bold transition-colors ${category === item ? 'bg-charcoal text-white shadow-lg' : 'border border-stone-300 bg-white/70 text-stone-600 hover:border-walnut hover:text-walnut'}`}>
+          <div className="scrollbar-none flex w-full min-w-0 items-center gap-2 overflow-x-auto px-1 py-2 whitespace-nowrap lg:flex-1">
+            {PRODUCT_FILTER_CATEGORIES.map((item) => (
+              <motion.button layout key={item} type="button" whileTap={{ scale: 0.96 }} onClick={() => selectCategory(item)} className={`focus-ring shrink-0 rounded-full px-5 py-2.5 text-sm font-bold transition-all duration-200 ${category === item ? 'bg-charcoal text-white shadow-lg shadow-charcoal/15' : 'border border-stone-300 bg-white/70 text-stone-600 hover:border-walnut hover:text-walnut'}`}>
                 {item}
-              </button>
+              </motion.button>
             ))}
           </div>
-          <label className="relative w-full max-w-sm">
+          <label className="relative w-full max-w-sm lg:w-80 lg:shrink-0">
             <span className="sr-only">ابحث في المنتجات</span>
             <Search className="absolute top-1/2 right-4 -translate-y-1/2 text-stone-400" size={18} />
             <input value={search} onChange={(event) => setSearch(event.target.value)} placeholder="ابحث بالاسم أو نوع الخشب..." className="focus-ring w-full rounded-full border border-stone-300 bg-white py-3 pr-11 pl-5 text-sm placeholder:text-stone-400" />

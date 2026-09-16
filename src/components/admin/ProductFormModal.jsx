@@ -2,10 +2,10 @@ import { AnimatePresence, motion } from 'framer-motion';
 import { ImagePlus, X } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
 import toast from 'react-hot-toast';
+import { PRODUCT_CATEGORIES } from '../../constants/productCategories';
 import api from '../../services/api';
 import SelectMenu from '../ui/SelectMenu';
 
-const categories = ['غرف نوم', 'صالونات', 'سفرة', 'مطابخ'];
 const emptyForm = { name: '', description: '', price: '', category: 'غرف نوم', woodType: '', dimensions: '', isAvailable: true };
 
 function ProductFormModal({ isOpen, product, onClose, onSaved }) {
@@ -63,7 +63,7 @@ function ProductFormModal({ isOpen, product, onClose, onSaved }) {
           <div className="grid gap-4 sm:grid-cols-2">
             <label className="admin-label sm:col-span-2">اسم المنتج *<input required minLength={3} maxLength={100} value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} className="form-field mt-2" /></label>
             <label className="admin-label">السعر بالجنيه *<input required min={0} type="number" value={form.price} onChange={(e) => setForm({ ...form, price: e.target.value })} className="form-field mt-2" /></label>
-            <div className="admin-label"><span>القسم *</span><SelectMenu value={form.category} options={categories} onChange={(category) => setForm({ ...form, category })} className="mt-2" /></div>
+            <div className="admin-label"><span>القسم *</span><SelectMenu value={form.category} options={PRODUCT_CATEGORIES} onChange={(category) => setForm({ ...form, category })} className="mt-2" /></div>
             <label className="admin-label">نوع الخشب *<input required value={form.woodType} onChange={(e) => setForm({ ...form, woodType: e.target.value })} className="form-field mt-2" /></label>
             <label className="admin-label">المقاسات<input value={form.dimensions} onChange={(e) => setForm({ ...form, dimensions: e.target.value })} className="form-field mt-2" placeholder="مثال: 200 × 180 سم" /></label>
             <label className="admin-label sm:col-span-2">الوصف *<textarea required minLength={10} rows={4} value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} className="form-field mt-2 resize-none" /></label>

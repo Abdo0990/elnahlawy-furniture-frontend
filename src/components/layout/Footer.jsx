@@ -23,7 +23,7 @@ function Footer() {
         <div>
           <h2 className="font-bold text-white">روابط سريعة</h2>
           <div className="mt-4 flex flex-col gap-3 text-sm">
-            <a className="transition-colors hover:text-brass-light" href="/#products">منتجاتنا</a>
+            <Link className="transition-colors hover:text-brass-light" to="/#products">منتجاتنا</Link>
             <Link className="transition-colors hover:text-brass-light" to="/deliveries">تسليمات العملاء</Link>
             <Link className="transition-colors hover:text-brass-light" to="/admin/login">دخول الإدارة</Link>
           </div>

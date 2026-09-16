@@ -8,7 +8,7 @@ import { SITE } from '../../config/site';
 const navigation = [
   { label: 'الرئيسية', href: '/' },
   { label: 'منتجاتنا', href: '/#products' },
-  { label: 'تسليماتنا', href: '/deliveries', isRoute: true },
+  { label: 'تسليماتنا', href: '/deliveries' },
   { label: 'تواصل معنا', href: '/#contact' },
 ];
 
@@ -35,10 +35,8 @@ function Navbar({ cartCount, onOpenCart }) {
         </Link>
 
         <div className="hidden items-center gap-8 md:flex">
-          {navigation.map((item) => item.isRoute ? (
+          {navigation.map((item) => (
             <Link key={item.label} to={item.href} className="focus-ring relative rounded-sm py-2 text-sm font-medium text-stone-300 transition-colors after:absolute after:inset-x-0 after:bottom-0 after:h-px after:origin-left after:scale-x-0 after:bg-brass after:transition-transform hover:text-white hover:after:scale-x-100">{item.label}</Link>
-          ) : (
-            <a key={item.label} href={item.href} className="focus-ring relative rounded-sm py-2 text-sm font-medium text-stone-300 transition-colors after:absolute after:inset-x-0 after:bottom-0 after:h-px after:origin-left after:scale-x-0 after:bg-brass after:transition-transform hover:text-white hover:after:scale-x-100">{item.label}</a>
           ))}
         </div>
 
@@ -83,10 +81,8 @@ function Navbar({ cartCount, onOpenCart }) {
             className="overflow-hidden border-t border-white/10 md:hidden"
           >
             <div className="container-shell flex flex-col py-3">
-              {navigation.map((item) => item.isRoute ? (
+              {navigation.map((item) => (
                 <Link key={item.label} to={item.href} onClick={() => setIsMenuOpen(false)} className="focus-ring rounded-lg px-3 py-3 text-sm text-stone-200 transition-colors hover:bg-white/5 hover:text-brass-light">{item.label}</Link>
-              ) : (
-                <a key={item.label} href={item.href} onClick={() => setIsMenuOpen(false)} className="focus-ring rounded-lg px-3 py-3 text-sm text-stone-200 transition-colors hover:bg-white/5 hover:text-brass-light">{item.label}</a>
               ))}
               <div className="mt-2 border-t border-white/10 px-3 pt-4 text-xs text-stone-400">
                 <a href={SITE.mapUrl} target="_blank" rel="noreferrer" className="flex items-start gap-2 leading-6"><MapPin size={15} className="mt-1 shrink-0 text-brass" />{SITE.address}</a>

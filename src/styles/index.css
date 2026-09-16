@@ -90,6 +90,14 @@ button {
   color: #44403c;
 }
 
+@utility scrollbar-none {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+  &::-webkit-scrollbar {
+    display: none;
+  }
+}
+
 @utility loading-ring {
   width: 2.5rem;
   height: 2.5rem;
