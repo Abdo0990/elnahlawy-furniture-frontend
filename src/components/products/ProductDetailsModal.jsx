@@ -52,8 +52,13 @@ function ProductDetailsModal({ productId, onClose }) {
             ) : (
               <div className="grid lg:grid-cols-[1.15fr_0.85fr]">
                 <div className="bg-stone-200 p-3 sm:p-5">
-                  <div className="relative aspect-[4/3] overflow-hidden rounded-2xl bg-stone-300">
-                    {product.images?.[activeImage] ? <img src={product.images[activeImage]} alt={product.name} className="size-full object-cover" /> : <div className="grid size-full place-content-center text-stone-500">لا توجد صورة</div>}
+                  <div className="relative aspect-[4/3] overflow-hidden rounded-2xl bg-stone-200">
+                    {product.images?.[activeImage] ? (
+                      <>
+                        <img src={product.images[activeImage]} alt="" aria-hidden="true" className="absolute inset-0 size-full scale-110 object-cover opacity-20 blur-2xl" />
+                        <img src={product.images[activeImage]} alt={product.name} className="relative size-full object-contain" />
+                      </>
+                    ) : <div className="grid size-full place-content-center text-stone-500">لا توجد صورة</div>}
                     <Maximize2 className="absolute bottom-4 left-4 text-white drop-shadow" size={20} />
                   </div>
                   {product.images?.length > 1 && (

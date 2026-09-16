@@ -5,7 +5,7 @@ export const UNAUTHORIZED_EVENT = 'elnahlawy:unauthorized';
 
 const api = axios.create({
   baseURL:
-    import.meta.env.VITE_API_BASE_URL || 'http://localhost:3000/api/v1',
+    /*import.meta.env.VITE_API_BASE_URL || */ 'http://localhost:3000/api/v1',
   headers: {
     Accept: 'application/json',
   },
