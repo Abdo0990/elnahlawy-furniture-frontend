@@ -1,7 +1,7 @@
-import { useEffect } from 'react';
 import { Outlet } from 'react-router-dom';
 import CartDrawer from '../store/CartDrawer';
 import { useCart } from '../../context/CartContext';
+import useBodyScrollLock from '../../hooks/useBodyScrollLock';
 import Footer from './Footer';
 import Navbar from './Navbar';
 import ScrollManager from './ScrollManager';
@@ -10,12 +10,7 @@ import WhatsAppButton from './WhatsAppButton';
 function StoreLayout() {
   const { closeCart, isCartOpen, itemCount, openCart } = useCart();
 
-  useEffect(() => {
-    document.body.style.overflow = isCartOpen ? 'hidden' : '';
-    return () => {
-      document.body.style.overflow = '';
-    };
-  }, [isCartOpen]);
+  useBodyScrollLock(isCartOpen);
 
   return (
     <div className="min-h-screen overflow-x-hidden">

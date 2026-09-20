@@ -13,6 +13,37 @@ const initialForm = {
   notes: '',
 };
 
+const egyptianMobilePattern = /^(?:01[0125]\d{8}|(?:\+20|20|0020)1[0125]\d{8})$/;
+
+const validateOrderForm = (form, items) => {
+  const errors = {};
+  const normalizedPhone = form.customerPhone.replace(/[\s()-]/g, '');
+
+  if (!form.customerName.trim()) errors.customerName = 'الاسم مطلوب';
+  else if (form.customerName.trim().length < 3) errors.customerName = 'الاسم يجب أن يكون 3 أحرف على الأقل';
+  else if (form.customerName.trim().length > 100) errors.customerName = 'الاسم يجب ألا يتجاوز 100 حرف';
+
+  if (!normalizedPhone) errors.customerPhone = 'رقم الموبايل مطلوب';
+  else if (!egyptianMobilePattern.test(normalizedPhone)) errors.customerPhone = 'أدخل رقم موبايل مصري صحيح مثل 01012345678';
+
+  if (!form.city.trim()) errors.city = 'المدينة أو المحافظة مطلوبة';
+  else if (form.city.trim().length > 100) errors.city = 'اسم المدينة طويل جداً';
+
+  if (!form.details.trim()) errors.details = 'العنوان بالتفصيل مطلوب';
+  else if (form.details.trim().length < 5) errors.details = 'يرجى كتابة عنوان أكثر تفصيلاً';
+  else if (form.details.trim().length > 300) errors.details = 'العنوان يجب ألا يتجاوز 300 حرف';
+
+  if (form.notes.trim().length > 500) errors.notes = 'الملاحظات يجب ألا تتجاوز 500 حرف';
+  if (!items.length) errors.items = 'اختر منتجًا واحدًا على الأقل';
+
+  return errors;
+};
+
+const serverFieldMap = {
+  'address.city': 'city',
+  'address.details': 'details',
+};
+
 const formatPrice = (value) =>
   new Intl.NumberFormat('ar-EG').format(Number(value || 0));
 
@@ -28,6 +59,7 @@ function CartDrawer({ isOpen, onClose }) {
   const [form, setForm] = useState(initialForm);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [whatsappUrl, setWhatsappUrl] = useState('');
+  const [fieldErrors, setFieldErrors] = useState({});
 
   useEffect(() => {
     const closeOnEscape = (event) => {
@@ -39,13 +71,22 @@ function CartDrawer({ isOpen, onClose }) {
 
   const handleChange = ({ target: { name, value } }) => {
     setForm((current) => ({ ...current, [name]: value }));
+    setFieldErrors((current) => ({ ...current, [name]: undefined }));
   };
 
   const submitOrder = async (event) => {
     event.preventDefault();
     if (!items.length) return;
 
+    const validationErrors = validateOrderForm(form, items);
+    if (Object.keys(validationErrors).length > 0) {
+      setFieldErrors(validationErrors);
+      toast.error(Object.values(validationErrors)[0]);
+      return;
+    }
+
     setIsSubmitting(true);
+    setFieldErrors({});
     try {
       const response = await api.post('/orders', {
         customerName: form.customerName.trim(),
@@ -63,9 +104,18 @@ function CartDrawer({ isOpen, onClose }) {
 
       setWhatsappUrl(response.data.data.whatsappUrl);
       setForm(initialForm);
+      setFieldErrors({});
       clearCart();
       toast.success('تم تسجيل طلبك بنجاح');
     } catch (error) {
+      if (error.errors?.length) {
+        const serverErrors = {};
+        error.errors.forEach(({ field, message }) => {
+          const mappedField = serverFieldMap[field] || field;
+          if (!serverErrors[mappedField]) serverErrors[mappedField] = message;
+        });
+        setFieldErrors(serverErrors);
+      }
       toast.error(error.message);
     } finally {
       setIsSubmitting(false);
@@ -74,6 +124,7 @@ function CartDrawer({ isOpen, onClose }) {
 
   const closeDrawer = () => {
     setWhatsappUrl('');
+    setFieldErrors({});
     onClose();
   };
 
@@ -158,18 +209,38 @@ function CartDrawer({ isOpen, onClose }) {
                   ))}
                 </div>
 
-                <form onSubmit={submitOrder} className="space-y-4 p-5 sm:p-7">
+                <form onSubmit={submitOrder} noValidate className="space-y-4 p-5 sm:p-7">
                   <div className="flex items-center justify-between text-lg font-extrabold text-charcoal">
                     <span>الإجمالي</span><span>{formatPrice(total)} ج.م</span>
                   </div>
                   <p className="text-xs leading-5 text-stone-500">سيتم تأكيد التفاصيل وموعد التسليم معك عبر واتساب.</p>
                   <div className="grid gap-3 sm:grid-cols-2">
-                    <input name="customerName" value={form.customerName} onChange={handleChange} minLength={3} required placeholder="الاسم بالكامل" className="form-field" />
-                    <input name="customerPhone" value={form.customerPhone} onChange={handleChange} required inputMode="tel" placeholder="رقم الموبايل" className="form-field" />
-                    <input name="city" value={form.city} onChange={handleChange} required placeholder="المدينة / المحافظة" className="form-field" />
-                    <input name="details" value={form.details} onChange={handleChange} required placeholder="العنوان بالتفصيل" className="form-field" />
+                    <label className="block">
+                      <span className="sr-only">الاسم بالكامل</span>
+                      <input name="customerName" value={form.customerName} onChange={handleChange} maxLength={100} aria-invalid={Boolean(fieldErrors.customerName)} placeholder="الاسم بالكامل" className={`form-field ${fieldErrors.customerName ? 'border-red-400' : ''}`} />
+                      {fieldErrors.customerName && <small className="mt-1 block px-1 text-[0.68rem] text-red-600">{fieldErrors.customerName}</small>}
+                    </label>
+                    <label className="block">
+                      <span className="sr-only">رقم الموبايل</span>
+                      <input name="customerPhone" value={form.customerPhone} onChange={handleChange} inputMode="tel" maxLength={18} aria-invalid={Boolean(fieldErrors.customerPhone)} placeholder="رقم الموبايل" className={`form-field ${fieldErrors.customerPhone ? 'border-red-400' : ''}`} />
+                      {fieldErrors.customerPhone && <small className="mt-1 block px-1 text-[0.68rem] text-red-600">{fieldErrors.customerPhone}</small>}
+                    </label>
+                    <label className="block">
+                      <span className="sr-only">المدينة أو المحافظة</span>
+                      <input name="city" value={form.city} onChange={handleChange} maxLength={100} aria-invalid={Boolean(fieldErrors.city)} placeholder="المدينة / المحافظة" className={`form-field ${fieldErrors.city ? 'border-red-400' : ''}`} />
+                      {fieldErrors.city && <small className="mt-1 block px-1 text-[0.68rem] text-red-600">{fieldErrors.city}</small>}
+                    </label>
+                    <label className="block">
+                      <span className="sr-only">العنوان بالتفصيل</span>
+                      <input name="details" value={form.details} onChange={handleChange} maxLength={300} aria-invalid={Boolean(fieldErrors.details)} placeholder="العنوان بالتفصيل" className={`form-field ${fieldErrors.details ? 'border-red-400' : ''}`} />
+                      {fieldErrors.details && <small className="mt-1 block px-1 text-[0.68rem] text-red-600">{fieldErrors.details}</small>}
+                    </label>
                   </div>
-                  <textarea name="notes" value={form.notes} onChange={handleChange} rows={3} placeholder="ملاحظات إضافية (اختياري)" className="form-field resize-none" />
+                  <label className="block">
+                    <span className="sr-only">ملاحظات إضافية</span>
+                    <textarea name="notes" value={form.notes} onChange={handleChange} rows={3} maxLength={500} aria-invalid={Boolean(fieldErrors.notes)} placeholder="ملاحظات إضافية (اختياري)" className={`form-field resize-none ${fieldErrors.notes ? 'border-red-400' : ''}`} />
+                    {fieldErrors.notes && <small className="mt-1 block px-1 text-[0.68rem] text-red-600">{fieldErrors.notes}</small>}
+                  </label>
                   <button disabled={isSubmitting} className="focus-ring w-full rounded-full bg-charcoal px-6 py-3.5 font-bold text-white transition-colors hover:bg-walnut-dark disabled:cursor-wait disabled:opacity-60">
                     {isSubmitting ? 'جارٍ تسجيل الطلب...' : 'تأكيد الطلب عبر واتساب'}
                   </button>

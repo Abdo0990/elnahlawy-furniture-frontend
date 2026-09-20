@@ -13,3 +13,7 @@ export const SITE = {
 export function getWhatsAppUrl(message) {
   return `https://wa.me/${SITE.whatsappNumber}?text=${encodeURIComponent(message)}`;
 }
+
+export function getWhatsAppShareUrl(message) {
+  return `https://wa.me/?text=${encodeURIComponent(message)}`;
+}

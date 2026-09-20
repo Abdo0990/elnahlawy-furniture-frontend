@@ -1,5 +1,5 @@
 import { AnimatePresence, motion } from 'framer-motion';
-import { ChevronLeft, ChevronRight, PackageOpen, RotateCcw, Search } from 'lucide-react';
+import { ChevronLeft, ChevronRight, PackageOpen, Palette, RotateCcw, Search } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { PRODUCT_FILTER_CATEGORIES } from '../../constants/productCategories';
 import api from '../../services/api';
@@ -96,6 +96,31 @@ function ProductCatalog() {
             <input value={search} onChange={(event) => setSearch(event.target.value)} placeholder="ابحث بالاسم أو نوع الخشب..." className="focus-ring w-full rounded-full border border-stone-300 bg-white py-3 pr-11 pl-5 text-sm placeholder:text-stone-400" />
           </label>
         </div>
+
+        <AnimatePresence>
+          {category === 'ركن' && (
+            <motion.aside
+              initial={{ opacity: 0, y: -10, height: 0 }}
+              animate={{ opacity: 1, y: 0, height: 'auto' }}
+              exit={{ opacity: 0, y: -8, height: 0 }}
+              transition={{ duration: 0.3, ease: [0.22, 1, 0.36, 1] }}
+              className="overflow-hidden"
+            >
+              <div className="mt-7 flex items-start gap-4 rounded-2xl border border-brass/30 bg-gradient-to-l from-brass/15 to-white px-5 py-4 shadow-sm sm:items-center sm:px-6">
+                <span className="grid size-11 shrink-0 place-items-center rounded-xl bg-walnut text-white shadow-md">
+                  <Palette size={21} />
+                </span>
+                <div>
+                  <h3 className="font-extrabold text-charcoal">ركنتك تتنفذ على ذوقك</h3>
+                  <p className="mt-1 text-sm leading-7 text-stone-600">
+                    بننفذ أي ركنة بالألوان والمقاسات المطلوبة، بأسعار تبدأ من{' '}
+                    <strong className="whitespace-nowrap text-walnut">٢٬٥٠٠ ج.م</strong>
+                  </p>
+                </div>
+              </div>
+            </motion.aside>
+          )}
+        </AnimatePresence>
 
         {error ? (
           <div className="mt-12 rounded-3xl border border-red-200 bg-red-50 px-6 py-12 text-center">

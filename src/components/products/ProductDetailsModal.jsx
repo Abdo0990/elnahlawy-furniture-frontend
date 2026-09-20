@@ -1,8 +1,10 @@
 import { AnimatePresence, motion } from 'framer-motion';
-import { Maximize2, ShoppingBag, X } from 'lucide-react';
+import { Maximize2, MessageCircle, ShoppingBag, X } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import toast from 'react-hot-toast';
 import { useCart } from '../../context/CartContext';
+import { getWhatsAppShareUrl } from '../../config/site';
+import useBodyScrollLock from '../../hooks/useBodyScrollLock';
 import api from '../../services/api';
 import { formatPrice } from '../../utils/formatters';
 
@@ -11,6 +13,8 @@ function ProductDetailsModal({ productId, onClose }) {
   const [product, setProduct] = useState(null);
   const [activeImage, setActiveImage] = useState(0);
   const [isLoading, setIsLoading] = useState(false);
+
+  useBodyScrollLock(Boolean(productId));
 
   useEffect(() => {
     if (!productId) return;
@@ -38,6 +42,16 @@ function ProductDetailsModal({ productId, onClose }) {
     window.addEventListener('keydown', onKeyDown);
     return () => window.removeEventListener('keydown', onKeyDown);
   }, [productId, onClose]);
+
+  const shareUrl = product
+    ? getWhatsAppShareUrl([
+        `شاهد ${product.name} من معرض النحلاوي للأثاث`,
+        `الفئة: ${product.category}`,
+        `السعر: ${formatPrice(product.price)} ج.م`,
+        product.images?.[0] ? `الصورة: ${product.images[0]}` : '',
+        `المتجر: ${window.location.origin}/#products`,
+      ].filter(Boolean).join('\n'))
+    : '#';
 
   return (
     <AnimatePresence>
@@ -75,16 +89,21 @@ function ProductDetailsModal({ productId, onClose }) {
                 <div className="flex flex-col justify-center p-6 sm:p-9">
                   <span className="text-xs font-extrabold text-walnut">{product.category}</span>
                   <h2 className="mt-2 text-2xl font-extrabold text-charcoal sm:text-3xl">{product.name}</h2>
-                  <p className="mt-5 text-sm leading-7 text-stone-600">{product.description}</p>
+                  <p className="mt-5 whitespace-pre-line break-words text-sm leading-8 text-stone-600">{product.description}</p>
                   <dl className="mt-6 grid grid-cols-2 gap-3 text-sm">
-                    <div className="rounded-xl bg-white p-3"><dt className="text-xs text-stone-500">نوع الخشب</dt><dd className="mt-1 font-bold text-charcoal">{product.woodType}</dd></div>
-                    <div className="rounded-xl bg-white p-3"><dt className="text-xs text-stone-500">المقاسات</dt><dd className="mt-1 font-bold text-charcoal">{product.dimensions || 'حسب الطلب'}</dd></div>
+                    <div className="rounded-xl bg-white p-3"><dt className="text-xs text-stone-500">نوع الخشب</dt><dd className="mt-1 whitespace-pre-line break-words font-bold leading-6 text-charcoal">{product.woodType}</dd></div>
+                    <div className="rounded-xl bg-white p-3"><dt className="text-xs text-stone-500">المقاسات</dt><dd className="mt-1 whitespace-pre-line break-words font-bold leading-6 text-charcoal">{product.dimensions || 'حسب الطلب'}</dd></div>
                   </dl>
                   <div className="mt-8 flex flex-wrap items-center justify-between gap-4 border-t border-stone-200 pt-6">
                     <div><span className="block text-xs text-stone-500">السعر</span><strong className="text-2xl text-walnut">{formatPrice(product.price)} <small className="text-sm">ج.م</small></strong></div>
-                    <button type="button" disabled={!product.isAvailable} onClick={() => { addItem(product); onClose(); }} className="focus-ring inline-flex items-center gap-2 rounded-full bg-charcoal px-6 py-3.5 text-sm font-bold text-white hover:bg-walnut-dark disabled:bg-stone-300">
-                      <ShoppingBag size={18} /> {product.isAvailable ? 'أضف للطلب' : 'غير متاح حاليًا'}
-                    </button>
+                    <div className="flex flex-wrap gap-2">
+                      <a href={shareUrl} target="_blank" rel="noreferrer" className="focus-ring inline-flex items-center gap-2 rounded-full border border-[#128C7E]/30 bg-[#128C7E]/10 px-5 py-3.5 text-sm font-bold text-[#0d766a] transition-colors hover:bg-[#128C7E] hover:text-white">
+                        <MessageCircle size={18} /> مشاركة
+                      </a>
+                      <button type="button" disabled={!product.isAvailable} onClick={() => { addItem(product); onClose(); }} className="focus-ring inline-flex items-center gap-2 rounded-full bg-charcoal px-6 py-3.5 text-sm font-bold text-white hover:bg-walnut-dark disabled:bg-stone-300">
+                        <ShoppingBag size={18} /> {product.isAvailable ? 'أضف للطلب' : 'غير متاح حاليًا'}
+                      </button>
+                    </div>
                   </div>
                 </div>
               </div>

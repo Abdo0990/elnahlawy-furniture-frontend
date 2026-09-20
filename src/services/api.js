@@ -5,7 +5,7 @@ export const UNAUTHORIZED_EVENT = 'elnahlawy:unauthorized';
 
 const api = axios.create({
   baseURL:
-    import.meta.env.VITE_API_BASE_URL ||  'http://localhost:3000/api/v1',
+    import.meta.env.VITE_API_BASE_URL || 'http://localhost:3000/api/v1',
   headers: {
     Accept: 'application/json',
   },
@@ -41,6 +41,7 @@ api.interceptors.response.use(
     const normalizedError = {
       message:
         error.response?.data?.message ||
+        error.response?.data?.errors?.[0]?.message ||
         (error.code === 'ECONNABORTED'
           ? 'استغرق الاتصال بالخادم وقتًا أطول من المتوقع'
           : 'تعذر الاتصال بالخادم، حاول مرة أخرى'),

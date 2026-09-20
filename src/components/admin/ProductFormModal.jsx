@@ -11,6 +11,8 @@ const emptyForm = { name: '', description: '', price: '', category: 'غرف نو
 function ProductFormModal({ isOpen, product, onClose, onSaved }) {
   const [form, setForm] = useState(emptyForm);
   const [files, setFiles] = useState([]);
+  const [existingImages, setExistingImages] = useState([]);
+  const [isDraggingImages, setIsDraggingImages] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const previews = useMemo(() => files.map((file) => ({ name: file.name, url: URL.createObjectURL(file) })), [files]);
 
@@ -27,19 +29,63 @@ function ProductFormModal({ isOpen, product, onClose, onSaved }) {
       isAvailable: product.isAvailable,
     } : emptyForm);
     setFiles([]);
+    setExistingImages(product?.images || []);
+    setIsDraggingImages(false);
   }, [isOpen, product]);
 
+  const addFiles = (selectedFiles) => {
+    const selected = Array.from(selectedFiles || []);
+    const allowedImages = selected.filter((file) => /^image\/(jpeg|png|webp)$/.test(file.type));
+    const validSizeImages = allowedImages.filter((file) => file.size <= 5 * 1024 * 1024);
+
+    if (allowedImages.length !== selected.length) toast.error('يسمح فقط بصور JPG أو PNG أو WebP');
+    if (validSizeImages.length !== allowedImages.length) toast.error('حجم الصورة الواحدة يجب ألا يتجاوز 5MB');
+
+    const knownFiles = new Set(files.map((file) => `${file.name}-${file.size}-${file.lastModified}`));
+    const uniqueFiles = validSizeImages.filter((file) => {
+      const key = `${file.name}-${file.size}-${file.lastModified}`;
+      if (knownFiles.has(key)) return false;
+      knownFiles.add(key);
+      return true;
+    });
+
+    const availableSlots = Math.max(0, 5 - existingImages.length - files.length);
+    if (uniqueFiles.length > availableSlots) {
+      toast.error(availableSlots > 0 ? `تمت إضافة ${availableSlots} صور فقط لأن الحد الأقصى 5 صور` : 'وصلت للحد الأقصى وهو 5 صور');
+    }
+
+    if (availableSlots > 0) setFiles((currentFiles) => [...currentFiles, ...uniqueFiles.slice(0, availableSlots)]);
+  };
+
   const selectFiles = (event) => {
-    const selected = Array.from(event.target.files || []);
-    if (selected.length > 5) return toast.error('الحد الأقصى 5 صور');
-    setFiles(selected);
+    addFiles(event.target.files);
+    event.target.value = '';
+  };
+
+  const dropFiles = (event) => {
+    event.preventDefault();
+    setIsDraggingImages(false);
+    addFiles(event.dataTransfer.files);
+  };
+
+  const leaveDropZone = (event) => {
+    if (!event.currentTarget.contains(event.relatedTarget)) setIsDraggingImages(false);
+  };
+
+  const removeNewImage = (indexToRemove) => {
+    setFiles((currentFiles) => currentFiles.filter((_, index) => index !== indexToRemove));
+  };
+
+  const removeExistingImage = (imageToRemove) => {
+    setExistingImages((currentImages) => currentImages.filter((image) => image !== imageToRemove));
   };
 
   const handleSubmit = async (event) => {
     event.preventDefault();
-    if (!product && files.length === 0) return toast.error('اختر صورة واحدة على الأقل');
+    if (existingImages.length + files.length === 0) return toast.error('يجب الاحتفاظ بصورة واحدة أو إضافة صورة جديدة على الأقل');
     const data = new FormData();
     Object.entries(form).forEach(([key, value]) => data.append(key, String(value)));
+    if (product) data.append('retainedImages', JSON.stringify(existingImages));
     files.forEach((file) => data.append('images', file));
     setIsSubmitting(true);
     try {
@@ -68,9 +114,11 @@ function ProductFormModal({ isOpen, product, onClose, onSaved }) {
             <label className="admin-label">المقاسات<input value={form.dimensions} onChange={(e) => setForm({ ...form, dimensions: e.target.value })} className="form-field mt-2" placeholder="مثال: 200 × 180 سم" /></label>
             <label className="admin-label sm:col-span-2">الوصف *<textarea required minLength={10} rows={4} value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} className="form-field mt-2 resize-none" /></label>
           </div>
-          <label className="flex cursor-pointer items-center justify-between rounded-2xl border border-dashed border-stone-300 bg-stone-50 p-5 hover:border-walnut"><span><strong className="block text-sm">صور المنتج {product ? '(اختياري)' : '*'}</strong><small className="mt-1 block text-stone-500">JPG أو PNG أو WebP — حتى 5 صور، 5MB للصورة</small></span><ImagePlus className="text-walnut" /><input type="file" accept="image/jpeg,image/png,image/webp" multiple onChange={selectFiles} className="sr-only" /></label>
-          {files.length > 0 && <div><p className="mb-2 text-xs font-bold text-amber-700">{product && 'الصور الجديدة ستستبدل الصور الحالية بالكامل'}</p><div className="flex gap-2 overflow-x-auto">{previews.map((preview) => <img key={preview.url} src={preview.url} alt={preview.name} className="size-20 rounded-xl object-cover" />)}</div></div>}
-          {product && files.length === 0 && product.images?.length > 0 && <div className="flex gap-2 overflow-x-auto">{product.images.map((image) => <img key={image} src={image} alt="" className="size-16 rounded-xl object-cover opacity-70" />)}</div>}
+          <label onDragEnter={(event) => { event.preventDefault(); setIsDraggingImages(true); }} onDragOver={(event) => { event.preventDefault(); event.dataTransfer.dropEffect = 'copy'; setIsDraggingImages(true); }} onDragLeave={leaveDropZone} onDrop={dropFiles} className={`flex cursor-pointer items-center justify-between rounded-2xl border-2 border-dashed p-5 transition-all duration-200 ${isDraggingImages ? 'scale-[1.01] border-gold bg-gold/10 shadow-lg shadow-gold/10' : 'border-stone-300 bg-stone-50 hover:border-walnut hover:bg-walnut/5'}`}><span><strong className="block text-sm">{isDraggingImages ? 'اترك الصور هنا لإضافتها' : `اسحب الصور هنا أو اضغط للاختيار ${product ? '(اختياري)' : '*'}`}</strong><small className="mt-1 block text-stone-500">JPG أو PNG أو WebP — حتى 5 صور، 5MB للصورة</small></span><span className={`grid size-11 shrink-0 place-items-center rounded-xl transition ${isDraggingImages ? 'bg-gold text-charcoal' : 'bg-walnut/10 text-walnut'}`}><ImagePlus /></span><input type="file" accept="image/jpeg,image/png,image/webp" multiple onChange={selectFiles} className="sr-only" /></label>
+          {(existingImages.length > 0 || previews.length > 0) && <div><div className="mb-2 flex items-center justify-between gap-3"><p className="text-xs font-bold text-stone-600">الصور الحالية والجديدة</p><span dir="ltr" className="rounded-full bg-walnut/10 px-2.5 py-1 text-xs font-bold text-walnut">{existingImages.length + previews.length} / 5</span></div><div className="flex gap-3 overflow-x-auto pb-2">
+            {existingImages.map((image, index) => <div key={image} className="group relative shrink-0"><img src={image} alt={`صورة المنتج ${index + 1}`} className="size-20 rounded-xl border border-stone-200 object-cover" /><button type="button" onClick={() => removeExistingImage(image)} className="absolute -left-1.5 -top-1.5 grid size-7 place-items-center rounded-full border-2 border-white bg-red-600 text-white shadow-md transition hover:scale-110 hover:bg-red-700" aria-label={`حذف الصورة ${index + 1}`} title="حذف الصورة"><X size={14} strokeWidth={3} /></button></div>)}
+            {previews.map((preview, index) => <div key={preview.url} className="group relative shrink-0"><img src={preview.url} alt={preview.name} className="size-20 rounded-xl border-2 border-gold/50 object-cover" /><span className="absolute bottom-1 right-1 rounded bg-charcoal/75 px-1.5 py-0.5 text-[9px] font-bold text-white">جديدة</span><button type="button" onClick={() => removeNewImage(index)} className="absolute -left-1.5 -top-1.5 grid size-7 place-items-center rounded-full border-2 border-white bg-red-600 text-white shadow-md transition hover:scale-110 hover:bg-red-700" aria-label={`إزالة الصورة الجديدة ${index + 1}`} title="إزالة الصورة"><X size={14} strokeWidth={3} /></button></div>)}
+          </div></div>}
           <label className="flex items-center gap-3 text-sm font-bold"><input type="checkbox" checked={form.isAvailable} onChange={(e) => setForm({ ...form, isAvailable: e.target.checked })} className="size-4 accent-walnut" /> المنتج متاح للطلب</label>
           <div className="flex justify-end gap-3 border-t border-stone-200 pt-5"><button type="button" onClick={onClose} className="rounded-xl border border-stone-300 px-5 py-3 text-sm font-bold">إلغاء</button><button disabled={isSubmitting} className="rounded-xl bg-charcoal px-6 py-3 text-sm font-bold text-white disabled:opacity-60">{isSubmitting ? 'جارٍ الحفظ...' : 'حفظ المنتج'}</button></div>
         </form></motion.div></div>}
